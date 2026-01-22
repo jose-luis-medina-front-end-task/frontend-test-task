@@ -895,6 +895,15 @@ h4,
   color: var(--color, var(--font-h4-color));
 }
 
+@media screen and (max-width: 749px) {
+  h4,
+  .h4,
+  .h4.h4,
+  .text-block.h4 > * {
+    font-size: 22px;
+  }
+}
+
 @media screen and (max-width: 1200px) {
   input.h4.h4,
   textarea.h4.h4,
@@ -2207,7 +2216,6 @@ product-price.text-block:is(.h1, .h2, .h3, .h4, .h5, .h6) > *:not(.tax-note) {
 }
 
 .compare-at-price {
-  opacity: 0.4;
   text-decoration-line: line-through;
   text-decoration-thickness: 1.5px;
 }
