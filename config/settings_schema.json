@@ -413,7 +413,7 @@
             "label": "18px"
           }
         ],
-        "default": "14"
+        "default": "18"
       },
       {
         "type": "select",
@@ -945,8 +945,8 @@
             "label": "20px"
           },
           {
-            "value": "24",
-            "label": "24px"
+            "value": "25",
+            "label": "25px"
           },
           {
             "value": "32",
@@ -985,7 +985,7 @@
             "label": "184px"
           }
         ],
-        "default": "24"
+        "default": "25"
       },
       {
         "type": "select",

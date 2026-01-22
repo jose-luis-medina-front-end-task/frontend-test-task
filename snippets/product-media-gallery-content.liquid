@@ -319,94 +319,30 @@
     data-presentation="{{ media_presentation }}"
     {{ block_shopify_attributes }}
   >
-    {% capture slides %}
-      {% for media in sorted_media %}
-        {% capture children %}
-          {%- liquid
-              if needs_both_sizes and forloop.first
-                assign media_sizes = sizes_single
-              else
-                assign media_sizes = sizes
-              endif
-          -%}
-          {% if block_settings.aspect_ratio != 'adapt' and block_settings.constrain_to_viewport %}
-            <div class="product-media-constraint-wrapper">
-              {%- render 'product-media', media: media, sizes: media_sizes, is_main_product_media: forloop.first -%}
-            </div>
-          {% else %}
-            {%- render 'product-media', media: media, sizes: media_sizes, is_main_product_media: forloop.first -%}
-          {% endif %}
-        {% endcapture %}
-        {% capture class %}
-          {{ product_media_container_class }} product-media-container--{{ media.media_type }}{% if block_settings.zoom %} product-media-container--zoomable{% endif %}{% if forloop.index0 == lowest_aspect_ratio_index and block_settings.aspect_ratio == 'adapt' %} product-media-container--tallest{% endif %}
-        {% endcapture %}
-        {% if block_settings.aspect_ratio == 'adapt' %}
-          {% capture style %}
-            --media-preview-ratio: {{ media.preview_image.aspect_ratio | default: 1.0 }};
-          {% endcapture %}
-        {% endif %}
-        {% if block_settings.zoom and media.media_type == 'model' %}
-          {%- capture attributes -%}"{% if settings.transition_to_main_product and forloop.first %} data-view-transition-type="product-image-transition"{% endif %}{% endcapture -%}
-        {% elsif block_settings.zoom %}
-          {%- capture attributes -%}on:click="#zoom-dialog-{{ block_id }}/open/{{ forloop.index0 }}"{% if settings.transition_to_main_product and forloop.first %} data-view-transition-type="product-image-transition"{% endif %}{% endcapture -%}
-        {% endif %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script
+      src="{{ 'product-gallery.js' | asset_url }}"
+      type="module"
+      fetchpriority="low"
+    ></script>
 
-        {% render 'slideshow-slide',
-          index: forloop.index0,
-          children: children,
-          class: class,
-          style: style,
-          attributes: attributes,
-          media_fit: block_settings.media_fit,
-        %}
-      {% endfor %}
-    {% endcapture %}
-
-    {% if sorted_media.size > 1 %}
-      {% capture controls %}
-        {% if render_slideshow_controls %}
-          {%- render 'slideshow-controls',
-            class: slideshow_controls_class,
-            style: slideshow_controls_style,
-            item_count: sorted_media.size,
-            thumbnails: sorted_media,
-            controls_on_media: controls_on_media,
-            pagination_position: pagination_position,
-            aspect_ratio: block_settings.aspect_ratio,
-            thumbnail_radius: block_settings.thumbnail_radius
-          -%}
-        {% endif %}
-
-        {% if render_mobile_slideshow_controls %}
-          {%- render 'slideshow-controls',
-            class: 'desktop:hidden media-gallery__mobile-controls',
-            style: block_settings.slideshow_mobile_controls_style,
-            item_count: sorted_media.size,
-            thumbnails: sorted_media,
-            controls_on_media: mobile_controls_on_media,
-            pagination_position: 'center',
-            aspect_ratio: block_settings.aspect_ratio,
-            thumbnail_radius: block_settings.thumbnail_radius
-          -%}
-        {% endif %}
-      {% endcapture %}
-    {% endif %}
-
-    {% if render_slideshow_arrows %}
-      {% capture slideshow_arrows %}
-        {% render 'slideshow-arrows', class: 'mobile:hidden', icon_style: block_settings.icons_style %}
-      {% endcapture %}
-    {% endif %}
-
-    {% render 'slideshow',
-      ref: 'slideshow',
-      class: slideshow_class,
-      slides: slides,
-      slide_count: sorted_media.size,
-      slideshow_arrows: slideshow_arrows,
-      arrows_position: icons_position,
-      controls: controls
-    %}
+    <product-gallery>
+      <div ref="productGallerySwiper" class="swiper product-gallery-swiper">
+        <div class="swiper-wrapper">
+        {% for media in sorted_media %}
+          <div class="swiper-slide">
+            {{ media | image_url: width: 800 | image_tag: alt: media.alt }}
+          </div>
+        {% endfor %}
+        </div>
+      </div>
+      <div class="product-gallery-swiper__pagination swiper-pagination"></div>
+      <div class="product-gallery-swiper__navigation">
+        <button type="button" id="product-gallery-swiper__prev" class="swiper-button-prev product-gallery-swiper__prev"></button>
+        <button type="button" id="product-gallery-swiper__next" class="swiper-button-next product-gallery-swiper__next"></button>
+      </div>
+    </product-gallery>
 
     {% if media_presentation == 'grid' %}
       <ul
@@ -733,5 +669,113 @@
   .dialog-zoomed-gallery .product-media-container--model .product-media__image {
     /* Make the height match the height of the model-viewer */
     height: 100vh;
+  }
+
+  .media-gallery--carousel {
+    overflow: hidden;
+  }
+
+  .product-gallery-swiper__navigation {
+    display: none;
+    position: relative;
+  }
+
+  .swiper-pagination-bullets.swiper-pagination-horizontal.product-gallery-swiper__pagination {
+    --swiper-pagination-bottom: -5px;
+
+    position: relative;
+  }
+
+  .product-gallery-swiper__pagination .swiper-pagination-bullet {
+    --swiper-pagination-bullet-size: 10px;
+    --swiper-pagination-bullet-inactive-color: #F8F8F8;
+
+    box-shadow: inset 0px 3px 6px #00000029;
+  }
+
+  .product-gallery-swiper__pagination .swiper-pagination-bullet-active {
+    --swiper-pagination-color: #E5E5E5;
+  }
+
+  .product-gallery-swiper .swiper-slide img {
+    border-radius: 5px;
+  }
+
+  .swiper.product-gallery-swiper, .swiper.product-gallery-swiper .swiper-wrapper {
+    width: calc(100% - 40px);
+    /* Use visible overflow so partially hidden slides remain visible,
+      matching the intended visual design. */
+    overflow: visible;
+  }
+
+  /* Due to the higher complexity of the desktop customization, a mobile-first approach
+    is used for styling this Swiper instance. */
+  @media screen and (min-width: 750px) {
+    .swiper.product-gallery-swiper {
+      width: 480px;
+      height: 480px;
+      margin: 0;
+      margin-left: 115px;
+    }
+    
+    /* Since Swiper relies on CSS transforms (translate) to handle slide transitions,
+      they are disabled here to allow the custom desktop layout to work correctly. */
+    .swiper.product-gallery-swiper, .swiper.product-gallery-swiper .swiper-wrapper {
+      transform: none !important;
+    }
+
+    .product-gallery-swiper .swiper-slide:not(.swiper-slide-active) {
+      width: 100px;
+      height: 100px !important;
+      /* Offset non-active slides to the left to create visual separation
+        from the active (main) slide. */
+      transform: translate(-115px, 15px);
+      margin-bottom: 15px;
+    }
+
+    .product-gallery-swiper .swiper-slide-active {
+      width: 480px;
+      height: 480px;
+      position: absolute;
+    }
+
+    .product-gallery-swiper .swiper-button-lock {
+      display: initial;
+    }
+
+    .product-gallery-swiper__navigation {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      width: 480px;
+      margin-left: 115px;
+    }
+
+    .product-gallery-swiper__navigation button {
+      all: unset;
+      cursor: pointer;
+      width: 23px;
+      height: 23px;
+      position: relative;
+      margin: 0;
+    }
+
+    .product-gallery-swiper__navigation button::after {
+      --swiper-navigation-color: #000000;
+      --swiper-navigation-size: 12px;
+
+      font-weight: bold;
+    }
+
+    .product-gallery-swiper .swiper-button-next, .product-gallery-swiper  .swiper-button-prev {
+      width: 23px;
+      height: 23px;
+      bottom: -23px;
+    }
+
+    .product-gallery-swiper__pagination {
+      display: none;
+    }
   }
 {% endstylesheet %}
